@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, non_constant_identifier_names, use_key_in_widget_constructors, avoid_print, constant_identifier_names
+// ignore_for_file: prefer_const_constructors, non_constant_identifier_names, use_key_in_widget_constructors, avoid_print, constant_identifier_names, prefer_final_fields
 
 import 'dart:convert';
 
@@ -18,9 +18,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final _emailController = TextEditingController();
-
-  final _passwordController = TextEditingController();
+  late TextEditingController _emailController = TextEditingController();
+  late TextEditingController _passwordController = TextEditingController();
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -29,6 +28,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    _emailController.text = 'estebanaguirre@gmail.com';
+    _passwordController.text = '123456789';
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(title: Text("Login")),
@@ -67,12 +68,8 @@ class _LoginPageState extends State<LoginPage> {
                     primary: Theme.of(context).primaryColor),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    print("Formulario valido");
                     _loginUser();
-                    _redirectUser();
-                  } else {
-                    print("errores");
-                  }
+                  } else {}
                 },
                 child: Text(
                   "Login",
@@ -129,8 +126,6 @@ class _LoginPageState extends State<LoginPage> {
   void _loginUser() async {
     _isSubmitedText = true;
     setState(() {});
-    print(_emailController.text);
-    print(_passwordController.text);
     final res = await http
         .post(Uri.parse('http://10.0.2.2:1337/api/auth/local'), body: {
       "identifier": _emailController.text,
@@ -143,17 +138,12 @@ class _LoginPageState extends State<LoginPage> {
     final responseData = json.decode(res.body);
 
     if (res.statusCode == 200) {
-      print("correcto");
-      print(responseData);
+      _redirectUser();
       _succesResponse();
       _storeUserData(responseData);
     } else {
-      print("incorrecto");
-      print(responseData);
       _errorResponse(responseData['error']['message']);
     }
-
-    print(responseData);
   }
 
   void _succesResponse() {
@@ -180,11 +170,12 @@ class _LoginPageState extends State<LoginPage> {
 
   void _storeUserData(Map<String, dynamic> responseData) async {
     final prefs = await SharedPreferences.getInstance();
-
     prefs.setString("jwt", responseData['jwt']);
     prefs.setInt("id", responseData['user']['id']);
     prefs.setString("username", responseData['user']['username']);
     prefs.setString("email", responseData['user']['email']);
+    prefs.setInt("cart_id", responseData['user']['cart_id']);
+    prefs.setInt("favorite_id", responseData['user']['favorite_id']);
   }
 
   void _redirectUser() {

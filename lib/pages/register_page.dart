@@ -32,6 +32,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    _emailController.text = "estebanaguirre@gmail.com";
+    _userController.text = "esteban";
+    _passwordController.text = "123456789";
+    _confirmPasswordController.text = "123456789";
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(title: Text("Registrarse")),
@@ -177,11 +181,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       primary: Theme.of(context).primaryColor),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      print("Formulario valido");
                       _registerUser();
-                    } else {
-                      print("errores");
-                    }
+                    } else {}
                   },
                   child: Text(
                     "Registrarse",
@@ -204,11 +205,37 @@ class _RegisterPageState extends State<RegisterPage> {
     _isSubmitedText = true;
     setState(() {});
 
+    var header = {"Content-Type": "application/json"};
+
+// INFORMACION DEL CARRITO
+    var bodyCart = jsonEncode({
+      'data': {'products': '[]'}
+    });
+
+    final resCart = await http.post(Uri.parse('http://10.0.2.2:1337/api/carts'),
+        headers: header, body: bodyCart);
+
+    final responseDataCart = json.decode(resCart.body);
+
+//INFORMACION DE FAVORITOS
+    var bodyFavorite = jsonEncode({
+      'data': {'products': '[]'}
+    });
+
+    final resFavorite = await http.post(
+        Uri.parse('http://10.0.2.2:1337/api/favorites'),
+        headers: header,
+        body: bodyFavorite);
+
+    final responseDataFavorite = json.decode(resFavorite.body);
+
     final res = await http
         .post(Uri.parse('http://10.0.2.2:1337/api/auth/local/register'), body: {
       "username": _userController.text,
       "email": _emailController.text,
       "password": _passwordController.text,
+      "cart_id": responseDataCart['data']['id'].toString(),
+      "favorite_id": responseDataFavorite['data']['id'].toString(),
     });
 
     final responseData = json.decode(res.body);
@@ -216,14 +243,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
     setState(() {});
     if (res.statusCode == 200) {
-      print("respuesta 200");
-      print(res.body);
       _succesResponse();
       _storeUserData(responseData);
       _redirectUser();
     } else {
-      print("se presento algun error");
-      print(res.body);
       _errorResponse(responseData['error']['message']);
     }
   }
@@ -257,6 +280,8 @@ class _RegisterPageState extends State<RegisterPage> {
     prefs.setInt("id", responseData['user']['id']);
     prefs.setString("username", responseData['user']['username']);
     prefs.setString("email", responseData['user']['email']);
+    prefs.setInt("cart_id", responseData['user']['cart_id']);
+    prefs.setInt("favorite_id", responseData['user']['favorite_id']);
   }
 
   void _redirectUser() {
